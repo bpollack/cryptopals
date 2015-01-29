@@ -3,7 +3,8 @@
 
 USING: arrays base64 combinators.short-circuit circular
 formatting fry grouping kernel locals math math.bitwise
-math.order math.parser sequences sets strings ;
+math.order math.parser math.ranges math.statistics sequences
+sequences.extras sets strings ;
 
 IN: cryptopals
 
@@ -59,3 +60,15 @@ IN: cryptopals
 
 : hamming-distance ( a b -- distance )
     [ bitxor ] 2map [ bit-count ] map-sum ;
+
+:: normalized-distances ( bytes -- distances )
+    2 bytes length 40 min [a,b]
+    [| size |
+        bytes size <groups>
+        [ first ] [ second ] bi hamming-distance size /
+    ] map ;
+
+: likely-keysizes ( bytes -- sizes )
+    normalized-distances dup { 1 2 3 } kth-smallests '[
+        _ in? ]
+    find-all [ first ] map ;
