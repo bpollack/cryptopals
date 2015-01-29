@@ -2,8 +2,8 @@
 ! See http://factorcode.org/license.txt for BSD license.
 
 USING: arrays base64 combinators.short-circuit circular
-grouping kernel locals math math.order math.parser sequences 
-sets strings ;
+fry grouping kernel locals math math.order math.parser
+sequences sets strings ;
 
 IN: cryptopals
 
@@ -17,7 +17,7 @@ IN: cryptopals
     hex>bytes >base64 >string ;
 
 : xor-bytes ( seq1 seq2 -- seq1^seq2 )
-    <circular> [ bitxor ] 2map ;
+    <circular> '[ _ nth bitxor ] map-index ;
 
 : xor-hexes ( seq1 seq2 -- seq1^seq2 )
     [ hex>bytes ] bi@ xor-bytes ;
@@ -37,11 +37,18 @@ IN: cryptopals
     [ likely-chars ] [ length ] bi / >float ;
 
 : likely-text? ( string -- f )
-    text-likeliness 0.99 > ;
+    text-likeliness 0.95 > ;
 
 : likely-key? ( bytes key -- f )
     xor-bytes likely-text? ;
 
-:: find-probable-keys ( hex -- keys )
+:: find-probable-keys ( bytes -- keys )
+    256 iota [| key |
+        bytes key 1array likely-key?
+    ] filter ;
+
+:: probable-decryptions ( hex -- decryptions )
     hex hex>bytes :> bytes
-    256 iota [ >string 1array bytes likely-key? ] filter ;
+    bytes find-probable-keys [| probable-key |
+        bytes probable-key 1array xor-bytes >string
+    ] map ;
