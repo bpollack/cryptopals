@@ -1,8 +1,9 @@
 ! Copyright (C) 2015 Benjamin Pollack.
 ! See http://factorcode.org/license.txt for BSD license.
 
-USING: base64 combinators.short-circuit grouping kernel math
-math.order math.parser sequences sets strings ;
+USING: arrays base64 combinators.short-circuit circular
+grouping kernel locals math math.order math.parser sequences 
+sets strings ;
 
 IN: cryptopals
 
@@ -15,8 +16,11 @@ IN: cryptopals
 : hex>base64 ( s -- s )
     hex>bytes >base64 >string ;
 
+: xor-bytes ( seq1 seq2 -- seq1^seq2 )
+    <circular> [ bitxor ] 2map ;
+
 : xor-hexes ( seq1 seq2 -- seq1^seq2 )
-    [ hex>bytes ] bi@ [ bitxor ] 2map ;
+    [ hex>bytes ] bi@ xor-bytes ;
 
 : likely-char? ( ch -- f )
     {
@@ -26,11 +30,18 @@ IN: cryptopals
         [ HS{ CHAR: , CHAR: . CHAR: \s CHAR: ? CHAR: ! } in? ]
     } 1|| ;
 
-: likely-chars ( s -- count )
+: likely-chars ( string -- count )
     0 [ likely-char? [ 1 + ] when ] reduce ;
 
-: text-likeliness ( s -- rating )
+: text-likeliness ( string -- rating )
     [ likely-chars ] [ length ] bi / >float ;
 
-: likely-text? ( s -- f )
-    [ likely-char? ] all? ;
+: likely-text? ( string -- f )
+    text-likeliness 0.99 > ;
+
+: likely-key? ( bytes key -- f )
+    xor-bytes likely-text? ;
+
+:: find-probable-keys ( hex -- keys )
+    hex hex>bytes :> bytes
+    256 iota [ >string 1array bytes likely-key? ] filter ;
