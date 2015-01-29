@@ -2,8 +2,8 @@
 ! See http://factorcode.org/license.txt for BSD license.
 
 USING: arrays base64 combinators.short-circuit circular
-fry grouping kernel locals math math.bitwise math.order
-math.parser sequences sets strings ;
+formatting fry grouping kernel locals math math.bitwise
+math.order math.parser sequences sets strings ;
 
 IN: cryptopals
 
@@ -11,13 +11,17 @@ IN: cryptopals
     2 <groups> [ hex> ] B{ } map-as ;
 
 : bytes>hex ( bytes -- s )
-    [ >hex ] { } map-as concat ;
+    [ "%02x" sprintf ] { } map-as concat ;
 
 : hex>base64 ( s -- s )
     hex>bytes >base64 >string ;
 
+: sorted-seqs ( seq1 seq2 -- longer-seq shorter-seq )
+    2dup [ length ] bi@ = not
+    [ 2array [ longest ] [ shortest ] bi ] when ;
+
 : xor-bytes ( seq1 seq2 -- seq1^seq2 )
-    <circular> '[ _ nth bitxor ] map-index ;
+    sorted-seqs <circular> '[ _ nth bitxor ] map-index ;
 
 : xor-hexes ( seq1 seq2 -- seq1^seq2 )
     [ hex>bytes ] bi@ xor-bytes ;
