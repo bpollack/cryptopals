@@ -42,15 +42,15 @@ IN: cryptopals
 : likely-key? ( bytes key -- f )
     xor-bytes likely-text? ;
 
-:: find-probable-keys ( bytes -- keys )
+:: likely-keys ( bytes -- keys )
     256 iota [| key |
         bytes key 1array likely-key?
     ] filter ;
 
-:: probable-decryptions ( hex -- decryptions )
+:: likely-decryptions ( hex -- decryptions )
     hex hex>bytes :> bytes
-    bytes find-probable-keys [| probable-key |
-        bytes probable-key 1array xor-bytes >string
+    bytes likely-keys [| key |
+        bytes key 1array xor-bytes >string
     ] map ;
 
 : hamming-distance ( a b -- distance )
