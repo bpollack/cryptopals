@@ -1,7 +1,8 @@
 ! Copyright (C) 2015 Benjamin Pollack.
 ! See http://factorcode.org/license.txt for BSD license.
-USING: base64 combinators.short-circuit grouping kernel math math.order math.parser sequences sets
-strings ;
+
+USING: base64 combinators.short-circuit grouping kernel math
+math.order math.parser sequences sets strings ;
 
 IN: cryptopals
 
