@@ -18,8 +18,8 @@ IN: cryptopals
     hex>bytes >base64 >string ;
 
 : sorted-seqs ( seq1 seq2 -- longer-seq shorter-seq )
-    2dup [ length ] bi@ = not
-    [ 2array [ longest ] [ shortest ] bi ] when ;
+    2dup [ length ] bi@ =
+    [ 2array [ longest ] [ shortest ] bi ] unless ;
 
 : xor-bytes ( seq1 seq2 -- seq1^seq2 )
     sorted-seqs <circular> '[ _ nth bitxor ] map-index ;
@@ -36,10 +36,10 @@ IN: cryptopals
     } 1|| ;
 
 : likely-chars ( string -- count )
-    [ likely-char? [ 1 ] [ 0 ] if ] map-sum ;
+    [ likely-char? 1 0 ? ] map-sum ;
 
 : text-likeliness ( string -- rating )
-    [ likely-chars ] [ length ] bi / >float ;
+    [ likely-chars ] [ length ] bi / ;
 
 : likely-text? ( string -- f )
     text-likeliness 0.95 > ;
@@ -69,6 +69,6 @@ IN: cryptopals
     ] map ;
 
 : likely-keysizes ( bytes -- sizes )
-    normalized-distances dup { 1 2 3 } kth-smallests '[
-        _ in? ]
-    find-all [ first ] map ;
+    normalized-distances dup
+    { 0 1 2 } kth-smallests '[ _ in? ] find-all
+    [ first ] map ;
