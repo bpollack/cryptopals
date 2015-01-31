@@ -1,10 +1,10 @@
 ! Copyright (C) 2015 Benjamin Pollack.
 ! See http://factorcode.org/license.txt for BSD license.
 
-USING: arrays base64 combinators.short-circuit circular
+USING: arrays assocs base64 combinators.short-circuit circular
 formatting fry grouping kernel locals math math.bitwise
-math.order math.parser math.ranges math.statistics sequences
-sequences.extras sets strings ;
+math.combinatorics math.order math.parser math.ranges math.statistics sequences
+sequences.extras sets sorting strings ;
 
 IN: cryptopals
 
@@ -32,14 +32,11 @@ IN: cryptopals
         [ CHAR: A CHAR: Z between? ]
         [ CHAR: a CHAR: z between? ]
         [ CHAR: 0 CHAR: 9 between? ]
-        [ HS{ CHAR: , CHAR: . CHAR: \s CHAR: ? CHAR: ! } in? ]
+        [ ",. \t\n\r?!" in? ]
     } 1|| ;
 
-: likely-chars ( string -- count )
-    [ likely-char? 1 0 ? ] map-sum ;
-
 : text-likeliness ( string -- rating )
-    [ likely-chars ] [ length ] bi / ;
+    [ likely-char? ] count* ;
 
 : likely-text? ( string -- f )
     text-likeliness 0.95 > ;
@@ -51,6 +48,14 @@ IN: cryptopals
     256 iota [| key |
         bytes key 1array likely-key?
     ] filter ;
+
+: likeliest-key ( bytes -- key )
+    256 iota swap '[
+        1array _ xor-bytes text-likeliness
+    ] map <enum> sort-values last first ;
+
+: likeliest-decryption ( bytes -- decryption )
+    dup likeliest-key 1array xor-bytes >string ;
 
 :: likely-decryptions ( hex -- decryptions )
     hex hex>bytes :> bytes
@@ -64,11 +69,20 @@ IN: cryptopals
 :: normalized-distances ( bytes -- distances )
     2 bytes length 40 min [a,b]
     [| size |
-        bytes size <groups>
-        [ first ] [ second ] bi hamming-distance size /
+        0 4 bytes size <groups> <slice> 2 [
+            first2 hamming-distance size /
+        ] map-combinations mean
     ] map ;
 
-: likely-keysizes ( bytes -- sizes )
-    normalized-distances dup
-    { 0 1 2 } kth-smallests '[ _ in? ] find-all
-    [ first ] map ;
+: keysize-distance ( bytes -- sizes )
+    normalized-distances <enum> sort-values [
+        first2 [ 1 + ] dip 2array
+    ] map ;
+
+:: likeliest-repeating-key ( bytes keysize -- key )
+    bytes keysize <groups> :> chunks
+    keysize iota [| offset |
+        chunks [| chunk |
+            chunk length offset > [ offset chunk nth ] [ 0 ] if
+        ] map likeliest-key
+    ] map ;
