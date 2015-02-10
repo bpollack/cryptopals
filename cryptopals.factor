@@ -1,9 +1,9 @@
 ! Copyright (C) 2015 Benjamin Pollack.
 ! See http://factorcode.org/license.txt for BSD license.
 
-USING: arrays assocs base64 combinators.short-circuit circular
+USING: arrays ascii assocs assocs.extras base64 combinators.short-circuit circular
 formatting fry grouping kernel locals math math.bitwise
-math.combinatorics math.order math.parser math.ranges math.statistics sequences
+math.combinatorics math.extras math.order math.parser math.ranges math.statistics sequences
 sequences.extras sets sorting strings ;
 
 IN: cryptopals
@@ -35,8 +35,47 @@ IN: cryptopals
         [ ",. \t\n\r?!" in? ]
     } 1|| ;
 
-: text-likeliness ( string -- rating )
+: english-distribution ( -- dist )
+    H{
+        { CHAR: a  8.167 }
+        { CHAR: b  1.492 }
+        { CHAR: c  2.782 }
+        { CHAR: d  4.253 }
+        { CHAR: e 12.702 }
+        { CHAR: f  2.228 }
+        { CHAR: g  2.015 }
+        { CHAR: h  6.094 }
+        { CHAR: i  6.966 }
+        { CHAR: j  0.153 }
+        { CHAR: k  0.772 }
+        { CHAR: l  4.025 }
+        { CHAR: m  2.406 }
+        { CHAR: n  6.749 }
+        { CHAR: o  7.507 }
+        { CHAR: p  1.929 }
+        { CHAR: q  0.095 }
+        { CHAR: r  5.987 }
+        { CHAR: s  6.327 }
+        { CHAR: t  9.056 }
+        { CHAR: u  2.758 }
+        { CHAR: v  0.978 }
+        { CHAR: w  2.360 }
+        { CHAR: x  0.150 }
+        { CHAR: y  1.974 }
+        { CHAR: z  0.074 }
+    } ;
+
+: bad-text-likeliness ( string -- rating )
     [ likely-char? ] count* ;
+
+: map-alphabet ( ... quot: ( ... elt -- ... newelt ) -- ... newseq )
+    CHAR: a CHAR: z [a,b] swap map ; inline
+
+: text-likeliness ( string -- rating )
+    dup bad-text-likeliness swap
+    >lower histogram '[ _ at [ 0 ] unless* ] map-alphabet
+    english-distribution '[ _ at [ 0 ] unless* ] map-alphabet
+    chi2 + 2 / ;
 
 : likely-text? ( string -- f )
     text-likeliness 0.95 > ;
@@ -44,15 +83,15 @@ IN: cryptopals
 : likely-key? ( bytes key -- f )
     xor-bytes likely-text? ;
 
-:: likely-keys ( bytes -- keys )
-    256 iota [| key |
-        bytes key 1array likely-key?
-    ] filter ;
+: likely-keys ( bytes -- keys )
+    256 iota [
+        1array over likely-key?
+    ] filter nip ;
 
 : likeliest-key ( bytes -- key )
-    256 iota swap '[
-        1array _ xor-bytes text-likeliness
-    ] map <enum> sort-values last first ;
+    256 iota [
+        1array over xor-bytes text-likeliness
+    ] map nip <enum> sort-values first first ;
 
 : likeliest-decryption ( bytes -- decryption )
     dup likeliest-key 1array xor-bytes >string ;
