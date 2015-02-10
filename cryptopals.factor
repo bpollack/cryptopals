@@ -75,7 +75,7 @@ IN: cryptopals
     dup bad-text-likeliness swap
     >lower histogram '[ _ at [ 0 ] unless* ] map-alphabet
     english-distribution '[ _ at [ 0 ] unless* ] map-alphabet
-    chi2 + 2 / ;
+    chi2 + ;
 
 : likely-text? ( string -- f )
     text-likeliness 0.95 > ;
